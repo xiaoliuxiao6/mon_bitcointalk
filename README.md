@@ -39,13 +39,13 @@ python3 btt-altcoin-scraper.py --output result.json
 
 ## CI / 自动化
 
-项目配置了 CI 流水线（`.github/workflows/scrape.yml`），每 **15 分钟** 自动运行一次。
+项目配置了 CI 流水线（`.github/workflows/scrape.yml`），每 **10 分钟** 自动运行一次。
 
 ### Setup / 配置步骤
 
 1. Fork or push this repo to GitHub/Gitee
 2. Add repository secret: **`DISCORD_WEBHOOK_URL`** — your Discord webhook URL
-3. The workflow will auto-run every 15 min, commit `jieguo.json` back to repo for persistence
+3. The workflow will auto-run every 10 min, commit `jieguo.json` back to repo for persistence
 
 ### Environment Variables / 环境变量
 
