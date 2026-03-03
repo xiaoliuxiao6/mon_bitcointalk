@@ -1,5 +1,14 @@
 [
   {
+    "topic_id": 5576243,
+    "msg_id": 66467550,
+    "title": "selfcoin",
+    "url": "https://bitcointalk.org/index.php?topic=5576243.0",
+    "author": "giorgi1919",
+    "is_mining": false,
+    "found_at": "2026-03-03 16:03:12"
+  },
+  {
     "topic_id": 5576225,
     "msg_id": 66467069,
     "title": "[ANN][NXF] Nexaflow - Confidential TX Ledger with Programmable Micro Coins (POW)",
