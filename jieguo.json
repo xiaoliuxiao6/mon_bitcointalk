@@ -1,5 +1,23 @@
 [
   {
+    "topic_id": 5576225,
+    "msg_id": 66467069,
+    "title": "[ANN][NXF] Nexaflow - Confidential TX Ledger with Programmable Micro Coins (POW)",
+    "url": "https://bitcointalk.org/index.php?topic=5576225.0",
+    "author": "anythingtechpro",
+    "is_mining": true,
+    "found_at": "2026-03-03 10:52:51"
+  },
+  {
+    "topic_id": 5576224,
+    "msg_id": 66466984,
+    "title": "SolCoin (SLC) - AI-Powered Bitcoin Standard | Open Source | Live Node",
+    "url": "https://bitcointalk.org/index.php?topic=5576224.0",
+    "author": "yoshikiazuma",
+    "is_mining": false,
+    "found_at": "2026-03-03 10:52:52"
+  },
+  {
     "topic_id": 5576215,
     "msg_id": 66466670,
     "title": "BOTS and Agents are ruining the Internet. We fight back. $VPT",
