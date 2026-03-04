@@ -1,5 +1,23 @@
 [
   {
+    "topic_id": 5576380,
+    "msg_id": 66472043,
+    "title": "Xenomorph Coin- Proof of Work",
+    "url": "https://bitcointalk.org/index.php?topic=5576380.0",
+    "author": "13y85t",
+    "is_mining": true,
+    "found_at": "2026-03-04 21:20:54"
+  },
+  {
+    "topic_id": 5576379,
+    "msg_id": 66472019,
+    "title": "[ANN] Strayacoin Revival  New Pool + Open Source CUDA/OpenCL/CPU Miners",
+    "url": "https://bitcointalk.org/index.php?topic=5576379.0",
+    "author": "ansoni",
+    "is_mining": true,
+    "found_at": "2026-03-04 21:20:56"
+  },
+  {
     "topic_id": 5576358,
     "msg_id": 66471630,
     "title": "[ANN] TELU | Fixed Supply 21M | Ethereum Token | DEX Launch April 1",
