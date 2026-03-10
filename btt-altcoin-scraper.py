@@ -16,8 +16,9 @@ btt-altcoin-scraper.py — BitcoinTalk 山寨币公告区抓取器
   crontab -e
   0 */6 * * * /usr/bin/python3 /path/to/btt-altcoin-scraper.py --json --output /path/to/btt_latest.json
 """
-import argparse, json, logging, os, re, sys, time, urllib.request
+import argparse, json, logging, os, re, sys, time, urllib.request, uuid, zipfile
 from datetime import datetime, timezone, timedelta
+from io import BytesIO
 
 # 配置日志
 logging.basicConfig(
@@ -33,7 +34,7 @@ USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36
 # Discord Webhook（优先从环境变量读取，本地开发可硬编码）
 DISCORD_WEBHOOK_URL = os.environ.get(
     "DISCORD_WEBHOOK_URL",
-    "https://discord.com/api/webhooks/1476878218886905898/dZgrA3Srpj1pmFOlMr8QcIjAE_Ls4DJuMaLjNSpW7wtxeb0E-dJmosVGaOrXpOYoL4pt"
+    "https://discord.com/api/webhooks/1477185168698769430/0BtqMZWfdcSw8kUtZRfdIXI0Fz7rkYvku7c_nW5XlDUzYDY_K-fomaWYMMnY_-2eute2"
 )
 
 # 结果文件（用于去重）
@@ -180,8 +181,67 @@ def save_seen_topics(seen: dict):
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
-def send_discord_notification(post: dict):
-    """发送 Discord Webhook 通知"""
+def fetch_topic_html(url: str) -> bytes | None:
+    """抓取帖子详情页 HTML（返回原始字节，用于保存/上传）"""
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            return resp.read()
+    except Exception as e:
+        logger.error(f"抓取帖子页面失败: {e}")
+        return None
+
+
+def compress_html_to_zip(html_bytes: bytes, html_filename: str) -> bytes:
+    """将 HTML 压缩为 ZIP"""
+    zip_buffer = BytesIO()
+    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr(html_filename, html_bytes)
+    return zip_buffer.getvalue()
+
+
+def send_discord_file(file_bytes: bytes, filename: str, message_text: str, content_type: str = "application/zip"):
+    """通过 multipart/form-data 向 Discord Webhook 发送文件附件"""
+    boundary = uuid.uuid4().hex
+    body = b''
+
+    # payload_json part（消息文本）
+    body += f'--{boundary}\r\n'.encode()
+    body += b'Content-Disposition: form-data; name="payload_json"\r\n'
+    body += b'Content-Type: application/json\r\n\r\n'
+    body += json.dumps({"content": message_text}).encode('utf-8')
+    body += b'\r\n'
+
+    # file part
+    body += f'--{boundary}\r\n'.encode()
+    body += f'Content-Disposition: form-data; name="files[0]"; filename="{filename}"\r\n'.encode()
+    body += f'Content-Type: {content_type}\r\n\r\n'.encode()
+    body += file_bytes
+    body += b'\r\n'
+
+    body += f'--{boundary}--\r\n'.encode()
+
+    req = urllib.request.Request(
+        DISCORD_WEBHOOK_URL,
+        data=body,
+        headers={
+            "Content-Type": f"multipart/form-data; boundary={boundary}",
+            "User-Agent": "Mozilla/5.0",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            if resp.status in (200, 204):
+                logger.info(f"✅ Discord 文件已发送: {filename}")
+            else:
+                logger.warning(f"⚠️ Discord 文件上传返回 HTTP {resp.status}")
+    except Exception as e:
+        logger.error(f"❌ Discord 文件上传失败: {e}")
+
+
+def send_discord_notification(post: dict, topic_html: bytes | None = None):
+    """发送 Discord Webhook 通知（文本 + HTML 文件附件）"""
     mining_tag = " ⛏️" if post.get("is_mining") else ""
     text = (
         f"\n\n"
@@ -194,25 +254,34 @@ def send_discord_notification(post: dict):
         f"> 🔗 <{post['url']}>\n"
         f"\n"
     )
-    message = {"content": text}
-    data = json.dumps(message).encode('utf-8')
-    req = urllib.request.Request(
-        DISCORD_WEBHOOK_URL,
-        data=data,
-        headers={
-            "Content-Type": "application/json",
-            "User-Agent": "Mozilla/5.0",
-        },
-        method="POST",
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            if resp.status == 204:
-                logger.info(f"✅ Discord 通知已发送: {post['title']}")
-            else:
-                logger.warning(f"⚠️ Discord 返回 HTTP {resp.status}")
-    except Exception as e:
-        logger.error(f"❌ Discord 通知失败: {e}")
+
+    if topic_html:
+        # 有页面内容：压缩为 zip 后发送（避免 Discord 预览）
+        html_filename = f"topic_{post['topic_id']}.html"
+        zip_bytes = compress_html_to_zip(topic_html, html_filename)
+        zip_filename = f"topic_{post['topic_id']}.zip"
+        send_discord_file(zip_bytes, zip_filename, text, "application/zip")
+    else:
+        # 抓取失败：仅发文本
+        message = {"content": text}
+        data = json.dumps(message).encode('utf-8')
+        req = urllib.request.Request(
+            DISCORD_WEBHOOK_URL,
+            data=data,
+            headers={
+                "Content-Type": "application/json",
+                "User-Agent": "Mozilla/5.0",
+            },
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                if resp.status == 204:
+                    logger.info(f"✅ Discord 通知已发送: {post['title']}")
+                else:
+                    logger.warning(f"⚠️ Discord 返回 HTTP {resp.status}")
+        except Exception as e:
+            logger.error(f"❌ Discord 通知失败: {e}")
 
 
 def run_once() -> int:
@@ -242,9 +311,12 @@ def run_once() -> int:
         new_count += 1
 
         logger.info(f"🆕 新帖: {post['title']} (topic={topic_id})")
-        send_discord_notification(post)
+
+        # 抓取帖子详情页 HTML（用于备份）
+        topic_html = fetch_topic_html(post['url'])
+        send_discord_notification(post, topic_html)
         # 避免触发 Discord rate limit
-        time.sleep(1)
+        time.sleep(2)
 
     save_seen_topics(seen)
     logger.info(f"本轮完成: {new_count} 条新帖, 总记录 {len(seen)} 条")
