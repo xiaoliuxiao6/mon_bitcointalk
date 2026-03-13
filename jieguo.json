@@ -1,5 +1,14 @@
 [
   {
+    "topic_id": 5577339,
+    "msg_id": 66506234,
+    "title": "[TECH] BricsCoin  SHA-256 PoW + Post-Quantum (ML-DSA-65) + zk-STARK Privacy |",
+    "url": "https://bitcointalk.org/index.php?topic=5577339.0",
+    "author": "Bricscoin26",
+    "is_mining": true,
+    "found_at": "2026-03-14 04:56:14"
+  },
+  {
     "topic_id": 5577287,
     "msg_id": 66504300,
     "title": "Proof-of-Training | Mining = AI Training | O(1) Inference | 500-1000x Efficiency",
